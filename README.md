@@ -88,14 +88,16 @@ Video-Based-Drowning-Detection/
 
 realtime_detection_lora.py L407-423
 ```python
+# obj_ids : SAM2가 이번 프레임에 추정 중인 전체 객체 ID
+# masks_by_id : 그중 마스크 면적이 MIN_MASK_AREA 이상인 것만 남긴 {id:mask}
 for oid in obj_ids:
     if oid in masks_by_id:
-        obj_bbox = get_bbox_from_mask(masks_by_id[oid])
-        matched_yolo = any(calculate_iou(obj_bbox, yolo_bbox) > MASK_DET_IOU_THRESHOLD for yolo_bbox in yolo_bboxes)
+        obj_bbox = get_bbox_from_mask(masks_by_id[oid]) # mask -> bbox 변환
+        matched_yolo = any(calculate_iou(obj_bbox, yolo_bbox) > MASK_DET_IOU_THRESHOLD for yolo_bbox in yolo_bboxes) # yolo bbox와 mask bbox 겹치는지 체크 (수영자세와 bbox간의 차이로인해 낮은 임계값)
         if matched_yolo:
-            miss_counts[oid] = 0
+            miss_counts[oid] = 0             # YOLO가 교차 확인 -> 리셋
         else:
-            miss_counts[oid] = miss_counts.get(oid, 0) + 1
+            miss_counts[oid] = miss_counts.get(oid, 0) + 1             # sam2만 잡고 YOLO는 놓침 -> 누적
     else:
         miss_counts[oid] = miss_counts.get(oid, 0) + 1
 
@@ -103,7 +105,7 @@ to_remove = {oid for oid, miss in miss_counts.items()
              if miss > LOST_TIMEOUT
              and not crop_state.get(oid, {}).get('is_drowning', False)}
 
-to_remove |= find_duplicate_tracks(masks_by_id, yolo_bboxes, MASK_OVERLAP_THRESHOLD, MASK_DET_IOU_THRESHOLD)
+to_remove |= find_duplicate_tracks(masks_by_id, yolo_bboxes, MASK_OVERLAP_THRESHOLD, MASK_DET_IOU_THRESHOLD) # 한사람을 서로다른 두 ID가 중복 추적 체크
 
 ```
 
@@ -113,17 +115,20 @@ to_remove |= find_duplicate_tracks(masks_by_id, yolo_bboxes, MASK_OVERLAP_THRESH
 
 realtime_detection_lora.py L461-477
 ```python
-if to_promote or to_remove:
+# to_promote : 기존 Mask에 없는 탐지 대상을 후보 등록 및 PROMOTION_WINDOW(5프레임) 안에서 PROMOTION_THRESHOLD(3회) 이상 잡힌 것만 승격시킨 목록
+# to_remove : to_promote에서 삭제할 대상
+if to_promote or to_remove: # 트랙 집합에 변동 있을 시 SAM2 재시딩
     survivor_bboxes = {oid: get_bbox_from_mask(m) for oid, m in masks_by_id.items() if oid not in to_remove}
-    sam2_predictor.load_first_frame(frame_rgb)
+    sam2_predictor.load_first_frame(frame_rgb) # SAM2 추적 상태 초기화
 
     for oid in to_remove:
         miss_counts.pop(oid, None)
 
-    for oid, bbox in survivor_bboxes.items():
+    for oid, bbox in survivor_bboxes.items(): # obj_id 그대로 넘김
         bbox_arr = np.array([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], dtype=np.float32)
         sam2_predictor.add_new_prompt(frame_idx=0, obj_id=oid, bbox=bbox_arr)
 
+    # 새 ID 발급
     for temp_id, bbox in to_promote:
         new_id = tracker.next_id
         tracker.next_id += 1
