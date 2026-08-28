@@ -21,10 +21,10 @@
 │   RTSP / mp4                                                            │
 │    │                                                                    │ 
 │    ├─ YOLO ──── 사람 bbox ──┐                                            │
-│    │                        ├──────────────   교차 검증                   │
+│    │                        ├──────────────  IOU 교차 검증                │
 │    └─ SAM2 ─── ID별 mask ───┘                     │                      │
 │                                                  ▼                      │
-│                                                 crop                    │
+│                                               ID 별 crop                 │
 │                                                  │                      │
 │                                                  ▼                      │
 │                                        Behavior Classification          │
@@ -35,12 +35,12 @@
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 
-[Stage 0] 원본 영상 / RTSP 스트림
-            │  YOLO 사람 탐지 + SAM2 추적
-[Stage 1] 객체별 4초 crop 클립 생성
-            │
-[Stage 2] VideoMAE v2 K710 pretrain + LoRA finetuning → 행동 분류
-            │
+[Stage 1] 탐지 및 추적
+            │  YOLO 사람 탐지 + SAM2 추적 결과 대조
+[Stage 2] 객체별 4초 crop 클립 생성
+            │  224 x 224 resize, 16 frames
+[Stage 3] 익수 / 일반 행동 분류
+            │  VideoMAE v2 K710 pretrain + LoRA finetuning
 [Demo]    realtime_detection_lora.py — 탐지·추적·분류 통합 데모
 ```
 
@@ -48,10 +48,8 @@
 
 
 
-
 ## 영상 데모
 https://github.com/user-attachments/assets/adac6fdd-c303-48cb-aeaf-0d1077ad5fe8
-
 
 
 ## Directory Structure
@@ -85,6 +83,94 @@ Video-Based-Drowning-Detection/
 ├── requirements.txt
 └── .gitignore
 ```
+
+## 기술적 구현
+**1. YOLO 탐지 - SAM2 마스크 IOU 대조로 ID 유지**
+```
+for oid in obj_ids:
+    if oid in masks_by_id:
+        obj_bbox = get_bbox_from_mask(masks_by_id[oid])
+        matched_yolo = any(calculate_iou(obj_bbox, yolo_bbox) > MASK_DET_IOU_THRESHOLD for yolo_bbox in yolo_bboxes)
+        if matched_yolo:
+            miss_counts[oid] = 0
+        else:
+            miss_counts[oid] = miss_counts.get(oid, 0) + 1
+    else:
+        miss_counts[oid] = miss_counts.get(oid, 0) + 1
+
+to_remove = {oid for oid, miss in miss_counts.items()
+             if miss > LOST_TIMEOUT
+             and not crop_state.get(oid, {}).get('is_drowning', False)}
+
+to_remove |= find_duplicate_tracks(masks_by_id, yolo_bboxes, MASK_OVERLAP_THRESHOLD, MASK_DET_IOU_THRESHOLD)
+
+```
+
+**2. 추적 객체 집합 변경시 SAM2 초기화**
+```
+if to_promote or to_remove:
+    survivor_bboxes = {oid: get_bbox_from_mask(m) for oid, m in masks_by_id.items() if oid not in to_remove}
+    sam2_predictor.load_first_frame(frame_rgb)
+
+    for oid in to_remove:
+        miss_counts.pop(oid, None)
+
+    for oid, bbox in survivor_bboxes.items():
+        bbox_arr = np.array([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], dtype=np.float32)
+        sam2_predictor.add_new_prompt(frame_idx=0, obj_id=oid, bbox=bbox_arr)
+
+    for temp_id, bbox in to_promote:
+        new_id = tracker.next_id
+        tracker.next_id += 1
+        bbox_arr = np.array([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], dtype=np.float32)
+        sam2_predictor.add_new_prompt(frame_idx=0, obj_id=new_id, bbox=bbox_arr)
+        miss_counts[new_id] = 0
+        del candidates[temp_id]
+```
+
+**3. 4초 클립 단위 프레임 저장**
+```
+s = crop_state[oid]
+
+# 버퍼가 4초(cycle_frames)를 채웠을 때만 추론
+if len(s['frames']) >= cycle_frames:
+    s['is_drowning'] = classify_clip(s['frames'], model, device)
+    s['frames'] = []                                              # 버퍼 비우고 다음 주기 시작
+    s['crop_box_size'] = int(bbox_max_dim * CROP_SIZE_PADDING)    # 크롭 크기는 주기마다만 갱신
+    s['cycle_start_frame'] = frame_count
+
+# 크롭 중심은 매 프레임 EMA로 평활
+s['cx'] = CROP_EMA_PADDING * cx_raw + (1 - CROP_EMA_PADDING) * s['cx']
+s['cy'] = CROP_EMA_PADDING * cy_raw + (1 - CROP_EMA_PADDING) * s['cy']
+
+crop = crop_with_padding(frame, crop_state[oid])
+if crop is not None:
+    crop_state[oid]['frames'].append(crop)
+```
+
+**4. 4초 클립 단위 행동분류**
+```
+def classify_clip(frames, model, device):
+    """4초 buffer의 frames(BGR 224x224 list) → drowning(True/False)."""
+    if len(frames) < NUM_FRAMES:
+        return False
+    clip = np.stack(frames, axis=0)                              # (N, 224, 224, [B,G,R])
+
+    idx = np.linspace(0, len(frames) - 1, NUM_FRAMES).astype(int) # 16장 균등 간격 샘플링
+    clip = clip[idx]
+    clip = clip[..., [2, 1, 0]]                                  # OpenCV(BGR) → 모델 입력(RGB)
+
+    x = torch.from_numpy(clip)
+    x = x.permute(3, 0, 1, 2).unsqueeze(0).float() / 255.0       # (1, 3, 16, 224, 224), 0~1
+    x = x.to(device)
+    x = (x - IMAGENET_MEAN.to(device)) / IMAGENET_STD.to(device) 
+
+    with torch.inference_mode(), torch.autocast('cuda', dtype=torch.bfloat16):
+        logits = model(x)                                        # (1, 2)
+
+    return logits.argmax(dim=1).item() == DROWNING
+```
+
 
 ## Setup
 
