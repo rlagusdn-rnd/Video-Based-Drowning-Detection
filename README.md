@@ -73,10 +73,6 @@ pip install -r requirements.txt
 ```
 
 
-### 가중치 / 체크포인트
-
-직접 학습한 가중치 2개 (Object detection, action classification model) 저장소에 포함
-
 
 ### 데이터셋 레이아웃
 
