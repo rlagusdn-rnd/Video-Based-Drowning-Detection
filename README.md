@@ -116,7 +116,7 @@ to_remove |= find_duplicate_tracks(masks_by_id, yolo_bboxes, MASK_OVERLAP_THRESH
 realtime_detection_lora.py L461-477
 ```python
 # to_promote : 기존 Mask에 없는 탐지 대상을 후보 등록 및 PROMOTION_WINDOW(5프레임) 안에서 PROMOTION_THRESHOLD(3회) 이상 잡힌 것만 승격시킨 목록
-# to_remove : to_promote에서 삭제할 대상
+# to_remove : 연속 미탐(LOST_TIMEOUT 초과) 또는 중복 추적으로 제거할 기존 트랙
 if to_promote or to_remove: # 트랙 집합에 변동 있을 시 SAM2 재시딩
     survivor_bboxes = {oid: get_bbox_from_mask(m) for oid, m in masks_by_id.items() if oid not in to_remove}
     sam2_predictor.load_first_frame(frame_rgb) # SAM2 추적 상태 초기화
