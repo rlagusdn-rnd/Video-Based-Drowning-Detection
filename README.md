@@ -84,6 +84,10 @@ Video-Based-Drowning-Detection/
 
 ## 기술적 구현
 **1. YOLO 탐지 - SAM2 마스크 IOU 대조로 ID 유지**
+물 일렁임, 수면, 빛반사 등에 의해 객체 ID 유지 어려움
+-> segmentation mask결과와 탐지결과 대조로 같은 객체 ID 유지
+
+realtime_detection_lora.py L407~423
 ```python
 for oid in obj_ids:
     if oid in masks_by_id:
@@ -105,6 +109,10 @@ to_remove |= find_duplicate_tracks(masks_by_id, yolo_bboxes, MASK_OVERLAP_THRESH
 ```
 
 **2. 추적 객체 집합 변경시 SAM2 초기화**
+연속 segmentation 도중 객체 추가, 삭제가 아려움
+-> 추적 대상 등장하는 프레임을 첫 프레임으로 등록하고 SAM2 재등록(object id는 유지)
+
+realtime_detection_lora.py L461~477
 ```python
 if to_promote or to_remove:
     survivor_bboxes = {oid: get_bbox_from_mask(m) for oid, m in masks_by_id.items() if oid not in to_remove}
@@ -126,7 +134,10 @@ if to_promote or to_remove:
         del candidates[temp_id]
 ```
 
-**3. 4초 클립 단위 프레임 저장**
+**3. 4초 클립 단위 프레임 저장 및 행동분류**
+behavior classification을 위한 전처리 과정 & 행동분류 함수 호출
+
+realtime_detection_lora.py L496~508, L295~315
 ```python
 s = crop_state[oid]
 
