@@ -86,7 +86,7 @@ Video-Based-Drowning-Detection/
 
 ## 기술적 구현
 **1. YOLO 탐지 - SAM2 마스크 IOU 대조로 ID 유지**
-```
+```python
 for oid in obj_ids:
     if oid in masks_by_id:
         obj_bbox = get_bbox_from_mask(masks_by_id[oid])
@@ -107,7 +107,7 @@ to_remove |= find_duplicate_tracks(masks_by_id, yolo_bboxes, MASK_OVERLAP_THRESH
 ```
 
 **2. 추적 객체 집합 변경시 SAM2 초기화**
-```
+```python
 if to_promote or to_remove:
     survivor_bboxes = {oid: get_bbox_from_mask(m) for oid, m in masks_by_id.items() if oid not in to_remove}
     sam2_predictor.load_first_frame(frame_rgb)
@@ -129,7 +129,7 @@ if to_promote or to_remove:
 ```
 
 **3. 4초 클립 단위 프레임 저장**
-```
+```python
 s = crop_state[oid]
 
 # 버퍼가 4초(cycle_frames)를 채웠을 때만 추론
@@ -149,7 +149,7 @@ if crop is not None:
 ```
 
 **4. 4초 클립 단위 행동분류**
-```
+```python
 def classify_clip(frames, model, device):
     """4초 buffer의 frames(BGR 224x224 list) → drowning(True/False)."""
     if len(frames) < NUM_FRAMES:
