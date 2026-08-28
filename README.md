@@ -34,9 +34,6 @@
 │                                                 VLM                     │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
-```
-
-핵심 스택: YOLO + SAM2 (탐지·추적) → VideoMAE v2 K710 + LoRA finetuning (행동 인식) / VLM (보조 분석)
 
 [Stage 0] 원본 영상 / RTSP 스트림
             │  YOLO 사람 탐지 + SAM2 추적
@@ -45,6 +42,9 @@
 [Stage 2] VideoMAE v2 K710 pretrain + LoRA finetuning → 행동 분류
             │
 [Demo]    realtime_detection_lora.py — 탐지·추적·분류 통합 데모
+```
+
+핵심 스택: YOLO + SAM2 (탐지·추적) → VideoMAE v2 K710 + LoRA finetuning (행동 인식) / VLM (보조 분석)
 
 ---
 
