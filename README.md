@@ -108,7 +108,7 @@ to_remove |= find_duplicate_tracks(masks_by_id, yolo_bboxes, MASK_OVERLAP_THRESH
 ```
 
 **2. 추적 객체 집합 변경시 SAM2 초기화**
-연속 segmentation 도중 객체 추가, 삭제가 아려움
+연속 segmentation 도중 객체 추가, 삭제가 어려움
 -> 추적 대상 등장하는 프레임을 첫 프레임으로 등록하고 SAM2 재등록(object id는 유지)
 
 realtime_detection_lora.py L461-477
@@ -185,7 +185,7 @@ def classify_clip(frames, model, device):
 - Python 3.12 
 
 ```bash
-conda create -n drowning python=3.10 -y
+conda create -n drowning python=3.12 -y
 conda activate drowning
 pip install -r requirements.txt
 ```
