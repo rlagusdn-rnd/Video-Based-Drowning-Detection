@@ -22,29 +22,22 @@
 │    │                                                                    │ 
 │    ├─ YOLO ──── 사람 bbox ──┐                                            │
 │    │                        ├──────────────   교차 검증                   │
-│    └─ SAM2 ─── ID별 mask ───┘                    │                       │
+│    └─ SAM2 ─── ID별 mask ───┘                     │                      │
 │                                                  ▼                      │
-│                                              트랙별 crop                  │
+│                                                 crop                    │
 │                                                  │                      │
 │                                                  ▼                      │
-│                                          Behavior Classification        │
+│                                        Behavior Classification          │
 │                                                  │                      │
 │                                          drowning / normal              │
-│                                                                         │
+│                                                  │                      │
+│                                                 VLM                     │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+핵심 스택: YOLO + SAM2 (탐지·추적) → VideoMAE v2 K710 + LoRA finetuning (행동 인식) / VLM (보조 분석)
 
-
-> 목표: 실시간 스트림에서 익수자 탐지 → 경보
-> 핵심 스택: YOLO + SAM2 (탐지·추적) → VideoMAE v2 K710 + LoRA finetuning (행동 인식) / VLM (보조 분석)
-
----
-
-## Pipeline
-
-```
 [Stage 0] 원본 영상 / RTSP 스트림
             │  YOLO 사람 탐지 + SAM2 추적
 [Stage 1] 객체별 4초 crop 클립 생성
@@ -52,6 +45,13 @@
 [Stage 2] VideoMAE v2 K710 pretrain + LoRA finetuning → 행동 분류
             │
 [Demo]    realtime_detection_lora.py — 탐지·추적·분류 통합 데모
+
+---
+
+
+
+```
+
 ```
 
 ---
