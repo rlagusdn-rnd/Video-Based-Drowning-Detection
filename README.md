@@ -15,8 +15,6 @@
 **파이프라인 구조**
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         RAG-Enhanced VLM Pipeline                       │
-├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │   RTSP / mp4                                                            │
 │    │                                                                    │ 
@@ -31,7 +29,7 @@
 │                                                  │                      │
 │                                          drowning / normal              │
 │                                                  │                      │
-│                                                 VLM                     │
+│                                             VLM 활용 보조판단              │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 
@@ -147,8 +145,6 @@ crop = crop_with_padding(frame, crop_state[oid])
 if crop is not None:
     crop_state[oid]['frames'].append(crop)
 ```
-
-**4. 4초 클립 단위 행동분류**
 ```python
 def classify_clip(frames, model, device):
     """4초 buffer의 frames(BGR 224x224 list) → drowning(True/False)."""
@@ -176,7 +172,7 @@ def classify_clip(frames, model, device):
 
 ### Environment
 
-- Python 3.10 
+- Python 3.12 
 
 ```bash
 conda create -n drowning python=3.10 -y
