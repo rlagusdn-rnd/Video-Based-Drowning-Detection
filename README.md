@@ -28,8 +28,7 @@
 │                                        Behavior Classification          │
 │                                                  │                      │
 │                                          drowning / normal              │
-│                                                  │                      │
-│                                             VLM 활용 보조판단              │
+│                                                                         │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 
@@ -208,4 +207,4 @@ datasets/
 - SAM 2 — *Segment Anything in Images and Videos* (Meta AI)
 - VideoMAE v2 — *Scaling Video Masked Autoencoders with Dual Masking* (CVPR 2023)
 - LoRA — *Low-Rank Adaptation of Large Language Models*
-- Cutie — *Putting the Object Back into Video Object Segmentation* (CVPR 2024)
+- YOLO — *Ultralytics*
