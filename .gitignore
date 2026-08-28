@@ -1,0 +1,108 @@
+# ============================================================
+# .gitignore  —  깃에 올리지 않을 것들 (디스크엔 그대로 남음)
+# 규칙: 한 줄에 하나. 끝에 / 면 폴더, * 는 와일드카드, # 은 주석
+# ============================================================
+
+# ── 1. 대용량 데이터 / 가중치 (올리지 않음) ──
+# 학습 가중치는 저장소에 포함하지 않는다. 예외 없음.
+#   - weights/yolo/swim_0627.pt (커스텀 YOLO)
+#   - action_recognition/checkpoints/lora_qkv_best.pt (최종 LoRA)
+# 데이터셋은 실인물 CCTV 영상이라 공개 대상이 아니다.
+datasets/
+weights/
+crops/
+crop_object/
+outputs/
+videos/
+backup/
+
+# ── 2. 서드파티 라이브러리 (직접 클론해서 쓰는 것 — README에 설치법 안내) ──
+sam2/
+sam2_streaming/
+segment-anything/
+Cutie/
+lib/
+
+# ── 3. 모델/특징 바이너리 파일 (어디에 있든 무시) ──
+*.pt
+*.pth
+*.onnx
+*.npy
+*.npz
+*.pkl
+
+# ── 4. 결과/출력 미디어 (데모 영상 등) ──
+*.mp4
+*.avi
+*.mov
+# 만약 README용 데모 영상을 꼭 올리고 싶으면:  git add -f demo.mp4
+
+# ── 5. 실험 결과 로그 ──
+*.jsonl
+*.log
+
+# ── 6. 비밀정보 (API 키 등 — 절대 업로드 금지) ──
+# 주의: .gitignore 는 패턴 뒤 인라인 주석을 못 씀. 주석은 항상 윗줄에.
+.env
+*.key
+*.pem
+# sora2_api.py 안에 OpenAI API 키가 있음. 키 폐기 후 정리되면 아래 줄 삭제
+sora2_api.py
+# 사내 인수인계 문서 (클라우드 데이터 경로 · 데이터 수량 · 과제 이슈 포함) — 공개 금지
+for dk
+
+# ── 7. 파이썬 캐시 / 빌드 ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+build/
+dist/
+
+# ── 8. 에디터 / OS / 도구 설정 ──
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ── 9. 가상환경 ──
+.venv/
+venv/
+env/
+
+# ── 10. 코어 파이프라인 외 (테스트/실험/레거시/중복) — repo 깔끔하게 ──
+# 정리 전 원본 (클린본 test_sam2_track*.py 로 대체됨)
+test_sam2_rtsp.py
+test_sam2_rtsp_roi.py
+# 안 쓰는 / 옛 실험
+test_sam2.py
+test_cutie.py
+test_VOS_ori.py
+test.py
+test_qwen3.py
+# 레거시 트래커
+mot_tracker.py
+enhanced_mot_tracker.py
+# 1회용 / 유틸
+clip.py
+clip_video.py
+video_convert.py
+# 실험 노트북
+video_feature_extract/
+# 참고 논문 PDF (README 에 링크로 인용)
+papers/
+
+# ── 11. action_recognition / vlm 내부 — 핵심만 남김 ──
+# action_recognition: feature추출+head-only 베이스라인 트랙 제외 (최종 LoRA만 유지)
+#   주의: models/head.py 는 lora_backbone.py 가 import 하므로 유지함
+action_recognition/extract_videomae_v2.py
+action_recognition/data/feature_dataset.py
+action_recognition/test_head.py
+action_recognition/test_f1_head.py
+action_recognition/cal_test_dataset.py
+# 생성된 결과물 (재생성 가능)
+checkpoints/
+*.xlsx
+# vlm: 코드(zeroshot_eval.py, analyze_drowning.py)만 남기고 결과물(.txt/.csv) 제외
+vlm/*.txt
+vlm/*.csv

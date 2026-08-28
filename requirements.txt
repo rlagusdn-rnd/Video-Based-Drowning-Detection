@@ -1,0 +1,37 @@
+# 검증된 학습 환경: Python 3.12 / CUDA 12.6 + cuDNN 9.5.1 / Ubuntu 24.04
+
+# --- PyTorch (CUDA 12.6 휠로 설치할 것) -------------------------------
+# 아래 3개는 반드시 cu126 인덱스에서 설치. 그냥 `pip install torch` 하면
+# CPU/다른 CUDA 빌드가 깔려 LoRA 백본(models/lora_backbone.py)이 어긋남.
+#   pip install torch==2.6.0+cu126 torchvision==0.21.0+cu126 torchaudio==2.6.0+cu126 \
+#       --index-url https://download.pytorch.org/whl/cu126
+torch==2.6.0+cu126
+torchvision==0.21.0+cu126
+torchaudio==2.6.0+cu126
+
+# --- 객체 탐지 / 추적 (YOLO + SAM2) ----------------------------------
+ultralytics==8.4.21          # YOLO 사람 탐지
+hydra-core==1.3.2            # SAM2 config 로딩
+opencv-python==4.13.0.92     # cv2 — 영상 입출력 / 시각화
+numpy==2.2.6
+# 주의: SAM2(streaming, camera predictor)는 pip 패키지가 아니라
+#       sam2_streaming/ 폴더로 직접 클론해야 함 (README의 Setup 참고)
+
+# --- 행동 인식 (VideoMAE v2 + LoRA) ----------------------------------
+# 주의: transformers/peft/torch 버전이 어긋나면 lora_backbone.py의
+#       Attention.forward 몽키패치가 깨져 LoRA delta가 적용 안 될 수 있음.
+#       아래 3개 버전을 정확히 맞출 것.
+transformers==4.57.0
+peft==0.19.1                 # LoRA
+accelerate==1.9.0            # LoRA 학습 루프
+decord==0.6.0                # 빠른 비디오 디코딩
+scikit-learn==1.8.0          # P/R/F1, confusion matrix
+pandas==2.3.3                # 평가 결과 표
+matplotlib==3.10.5           # loss curve 등
+
+
+
+# how to use
+# pip install torch==2.6.0+cu126 torchvision==0.21.0+cu126 torchaudio==2.6.0+cu126 \
+#    --index-url https://download.pytorch.org/whl/cu126  
+# pip install -r requirements.txt
