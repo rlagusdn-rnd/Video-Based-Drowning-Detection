@@ -1,5 +1,8 @@
 # Video-Based Drowning Detection
 
+## 프로젝트 개요
+
+
 수영장 CCTV 영상에서 **익수(drowning) 사고를 조기 감지**하는 비전 파이프라인.
 실시간 RTSP 스트림에서 익수자를 탐지·추적하고, 행동 인식 모델로 위험 행동 분류
 
