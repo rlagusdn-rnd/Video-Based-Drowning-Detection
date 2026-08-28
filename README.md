@@ -46,18 +46,10 @@
 
 핵심 스택: YOLO + SAM2 (탐지·추적) → VideoMAE v2 K710 + LoRA finetuning (행동 인식) / VLM (보조 분석)
 
----
 
 
 
-```
-
-```
-
----
-
-
-
+## 영상 데모
 https://github.com/user-attachments/assets/adac6fdd-c303-48cb-aeaf-0d1077ad5fe8
 
 
