@@ -187,11 +187,20 @@ def classify_clip(frames, model, device):
 수영장 CCTV 영상 (https://www.youtube.com/@LifeguardRescue)
 
 1. 탐지 모델 학습 데이터셋: 원본 영상 -> 프레임 추출 -> 사람 라벨링(auto & manual labeling) -> 탐지 학습 데이터셋
+구축 이유 : 상반식, 머리만 노출된 상태, 튜브가림, 잠수 등 때문에 도메인 데이터 직접 구축
 
 2. 추적 성능평가 데이터셋: 원본 영상 -> 프레임 추출 -> MOT 포맷 GT 수동 라벨링 -> 추적 성능 평가 데이터셋(HOTA)
+구축 이유 : 잠수, 겹침 등으로 인한 ID 변경 최소화하는 Track 파이프라인 구현을 위한 평가데이터셋 구축
+성능 평가 후보군 : ByteTrack, BoTSORT, YOLO & SAM2, YOLO & CUTIE
+(CVAT 로컬 활용, MOT1.1 포맷)
 
 3. 행동인식 학습 및 평가 데이터셋 : 원본 영상 -> 탐지 & 추적 모델 활용하여 객체별 4초 crop 영상 생성 -> 수동 검수 (ID 유지 여부 + 행동 종류) -> 행동 분류 데이터셋
+구축 이유 : 객체별 행동을 판단하여 익수위험군을 도출하기 위한 행동분류 모델 학습 용 데이터셋 생성
+행동 종류 : 익수행동(Drowning), 서있기(Standing), 걷기(Walking), 수영(Swimming), 떠있기(Floating), 놀기(Playing)
+학습 모델 : VideoMAE v2 K710 backbone + LORA
+
 ```
+
 
 ## Setup
 
