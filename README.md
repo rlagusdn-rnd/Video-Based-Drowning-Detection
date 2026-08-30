@@ -182,6 +182,16 @@ def classify_clip(frames, model, device):
     return logits.argmax(dim=1).item() == DROWNING
 ```
 
+## 데이터셋 구축
+```
+수영장 CCTV 영상 (https://www.youtube.com/@LifeguardRescue)
+
+1. 탐지 모델 학습 데이터셋: 원본 영상 -> 프레임 추출 -> 사람 라벨링(auto & manual labeling) -> 탐지 학습 데이터셋
+
+2. 추적 성능평가 데이터셋: 원본 영상 -> 프레임 추출 -> MOT 포맷 GT 수동 라벨링 -> 추적 성능 평가 데이터셋(HOTA)
+
+3. 행동인식 학습 및 평가 데이터셋 : 원본 영상 -> 탐지 & 추적 모델 활용하여 객체별 4초 crop 영상 생성 -> 수동 검수 (ID 유지 여부 + 행동 종류) -> 행동 분류 데이터셋
+```
 
 ## Setup
 
